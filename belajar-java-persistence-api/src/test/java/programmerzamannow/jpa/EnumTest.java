@@ -5,12 +5,13 @@ import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
 import org.junit.jupiter.api.Test;
 import programmerzamannow.jpa.entity.Customer;
+import programmerzamannow.jpa.entity.CustomerType;
 import programmerzamannow.jpa.util.JpaUtil;
 
-public class ColumnTest {
+public class EnumTest {
 
     @Test
-    void column() {
+    void testEnum() {
         EntityManagerFactory entityManagerFactory = JpaUtil.getEntityManagerFactory();
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         EntityTransaction entityTransaction = entityManager.getTransaction();
@@ -18,29 +19,12 @@ public class ColumnTest {
         entityTransaction.begin();
 
         Customer customer = new Customer();
-        customer.setId("1");
+        customer.setId("3");
         customer.setName("Fathin");
         customer.setPrimaryEmail("fathin@mail.com");
-
-        entityManager.persist(customer);
-
-        entityTransaction.commit();
-        entityManager.close();
-    }
-
-    @Test
-    void transientTest() {
-        EntityManagerFactory entityManagerFactory = JpaUtil.getEntityManagerFactory();
-        EntityManager entityManager = entityManagerFactory.createEntityManager();
-        EntityTransaction entityTransaction = entityManager.getTransaction();
-
-        entityTransaction.begin();
-
-        Customer customer = new Customer();
-        customer.setId("4");
-        customer.setName("Fathin");
-        customer.setPrimaryEmail("fathin@mail.com");
-        customer.setFullName("Fathin Musthafa Habiburrahman");
+        customer.setAge((byte) 30);
+        customer.setMarried(false);
+        customer.setType(CustomerType.PREMIUM);
 
         entityManager.persist(customer);
 
