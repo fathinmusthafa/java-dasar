@@ -22,6 +22,12 @@
         <class>programmerzamannow.jpa.entity.Employee</class>
         <class>programmerzamannow.jpa.entity.Manager</class>
         <class>programmerzamannow.jpa.entity.VicePresident</class>
+        <class>programmerzamannow.jpa.entity.Payment</class>
+        <class>programmerzamannow.jpa.entity.PaymentCreditCard</class>
+        <class>programmerzamannow.jpa.entity.PaymentGopay</class>
+        <class>programmerzamannow.jpa.entity.Transaction</class>
+        <class>programmerzamannow.jpa.entity.TransactionCredit</class>
+        <class>programmerzamannow.jpa.entity.TransactionDebit</class>
 
         <properties>
             <property name="jakarta.persistence.jdbc.driver" value="com.mysql.cj.jdbc.Driver"/>
