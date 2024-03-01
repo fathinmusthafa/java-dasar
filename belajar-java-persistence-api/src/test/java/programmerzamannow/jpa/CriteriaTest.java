@@ -1,15 +1,11 @@
 package programmerzamannow.jpa;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.EntityTransaction;
-import jakarta.persistence.TypedQuery;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Root;
+import jakarta.persistence.*;
+import jakarta.persistence.criteria.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import programmerzamannow.jpa.entity.Brand;
+import programmerzamannow.jpa.entity.Product;
 import programmerzamannow.jpa.entity.SimpleBrand;
 import programmerzamannow.jpa.util.JpaUtil;
 
@@ -139,6 +135,133 @@ public class CriteriaTest {
         for (Brand brand : brands) {
             System.out.println(brand.getId() + " : " + brand.getName());
         }
+
+        entityTransaction.commit();
+        entityManager.close();
+    }
+
+    @Test
+    void criteriaJoinClause() {
+        EntityManagerFactory entityManagerFactory = JpaUtil.getEntityManagerFactory();
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        EntityTransaction entityTransaction = entityManager.getTransaction();
+        entityTransaction.begin();
+
+        CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Product> criteria = builder.createQuery(Product.class);
+        Root<Product> p = criteria.from(Product.class);
+        Join<Object, Object> b = p.join("brand");
+
+        // select p from Product p join p.brand b
+        criteria.select(p);
+        criteria.where(
+                builder.equal(b.get("name"), "Samsung")
+        );
+        // select p from Product p join p.brand b where b.name = 'Samsung'
+
+        TypedQuery<Product> query = entityManager.createQuery(criteria);
+        List<Product> products = query.getResultList();
+        for (Product product : products) {
+            System.out.println(product.getId() + " : " + product.getName());
+        }
+
+        entityTransaction.commit();
+        entityManager.close();
+    }
+
+    @Test
+    void criteriaNamedParameter() {
+        EntityManagerFactory entityManagerFactory = JpaUtil.getEntityManagerFactory();
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        EntityTransaction entityTransaction = entityManager.getTransaction();
+        entityTransaction.begin();
+
+        CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Product> criteria = builder.createQuery(Product.class);
+        Root<Product> p = criteria.from(Product.class);
+        Join<Object, Object> b = p.join("brand");
+
+        ParameterExpression<String> brandParameter = builder.parameter(String.class, "brand");
+
+        // select p from Product p join p.brand b
+        criteria.select(p);
+        criteria.where(
+                builder.equal(b.get("name"), brandParameter)
+        );
+        // select p from Product p join p.brand b where b.name = 'Samsung'
+
+        TypedQuery<Product> query = entityManager.createQuery(criteria);
+        query.setParameter(brandParameter, "Samsung");
+
+        List<Product> products = query.getResultList();
+        for (Product product : products) {
+            System.out.println(product.getId() + " : " + product.getName());
+        }
+
+        entityTransaction.commit();
+        entityManager.close();
+    }
+
+    @Test
+    void criteriaAggregateQuery() {
+        EntityManagerFactory entityManagerFactory = JpaUtil.getEntityManagerFactory();
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        EntityTransaction entityTransaction = entityManager.getTransaction();
+        entityTransaction.begin();
+
+        CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Object[]> criteria = builder.createQuery(Object[].class);
+        Root<Product> p = criteria.from(Product.class);
+        Join<Product, Brand> b = p.join("brand");
+
+        criteria.select(builder.array(
+                b.get("id"),
+                builder.min(p.get("price")),
+                builder.max(p.get("price")),
+                builder.avg(p.get("price"))
+        ));
+        // select b.id, min(p.price), max(p.price), avg(p.price) from Product p join p.brand b
+
+        criteria.groupBy(b.get("id"));
+        // select b.id, min(p.price), max(p.price), avg(p.price) from Product p join p.brand b group by b.id
+
+        criteria.having(builder.greaterThan(builder.min(p.get("price")), 500_000L));
+        // select b.id, min(p.price), max(p.price), avg(p.price) from Product p join p.brand b group by b.id having min(p.price) > 500000
+
+        TypedQuery<Object[]> query = entityManager.createQuery(criteria);
+        List<Object[]> objects = query.getResultList();
+        for (Object[] object : objects) {
+            System.out.println("Brand " + object[0]);
+            System.out.println("Min " + object[1]);
+            System.out.println("Max " + object[2]);
+            System.out.println("Average " + object[3]);
+        }
+
+        entityTransaction.commit();
+        entityManager.close();
+    }
+
+    @Test
+    void criteriaNonQuery() {
+        EntityManagerFactory entityManagerFactory = JpaUtil.getEntityManagerFactory();
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        EntityTransaction entityTransaction = entityManager.getTransaction();
+        entityTransaction.begin();
+
+        CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+        CriteriaUpdate<Brand> criteria = builder.createCriteriaUpdate(Brand.class);
+        Root<Brand> b = criteria.from(Brand.class);
+
+        criteria.set(b.get("name"), "Apple Updated");
+        criteria.set(b.get("description"), "Apple Company");
+
+        criteria.where(
+                builder.equal(b.get("id"), "apple")
+        );
+
+        Query query = entityManager.createQuery(criteria);
+        int impactedRecords = query.executeUpdate();
+        System.out.println("Success update " + impactedRecords + " records");
 
         entityTransaction.commit();
         entityManager.close();
